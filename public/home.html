@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApproVideo Interactive - API Driven</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Styles remain the same */
+        body { font-family: 'Poppins', sans-serif; background-color: #f9fafb; }
+        .hidden { display: none; }
+        .category-btn, .subcategory-btn { display: block; width: 100%; padding: 1rem; border-radius: 0.5rem; background-color: white; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); text-align: center; cursor: pointer; transition: all 0.2s ease-in-out; color: #374151; }
+        .category-btn:hover, .subcategory-btn:hover { border-color: #3b82f6; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); transform: translateY(-2px); }
+        .category-btn i { margin-bottom: 0.5rem; color: #10b981; }
+        .category-btn.bg-gradient-to-r { color: white; }
+        .category-btn.bg-gradient-to-r i { color: white; }
+        .subcategory-btn strong { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+        .subcategory-btn p { font-size: 0.875rem; color: #6b7280; }
+        .container { max-width: 1200px; margin: auto; padding: 1rem; }
+        .grid { display: grid; gap: 1rem; }
+        .grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+        .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .gap-6 { gap: 1.5rem; }
+        .gap-4 { gap: 1rem; }
+        header h1, header p { color: white; }
+        #content-details h3 { margin-bottom: 0.5rem; }
+        #content-details p { margin-bottom: 0.5rem; }
+        #content-details strong { font-weight: 600; }
+        .video-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; background-color: white; padding: 1rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); transition: box-shadow 0.2s ease-in-out; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+        .video-card:hover { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .video-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 0.375rem; margin-bottom: 0.75rem; background-color: #e5e7eb; }
+        .video-card h4 { font-weight: 600; margin-bottom: 0.5rem; font-size: 1rem; line-height: 1.4; }
+        .video-card .description { font-size: 0.875rem; color: #4b5563; margin-bottom: 0.75rem; }
+        .video-card .tags { font-size: 0.75rem; color: #6b7280; }
+        .loader { border: 4px solid #f3f4f6; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #video-detail { backdrop-filter: blur(4px); }
+        #video-detail iframe, #video-detail video { width: 100%; aspect-ratio: 16 / 9; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="text-center py-6 bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-md">
+        <h1 class="text-3xl font-bold">🌿 ApproVideo DIY Solutions 🌱</h1>
+        <p class="text-lg">Empowering communities through practical knowledge</p>
+    </header>
+    <main class="container mx-auto py-8">
+        <section id="category-icons" class="grid grid-cols-6 gap-6 text-center mb-8"> </section>
+        <section id="subcategory-section" class="mt-8 hidden mb-8">
+            <h2 id="subcategory-title" class="text-2xl font-semibold mb-4 text-center text-gray-700">Subcategories</h2>
+            <div id="subcategories" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"> </div>
+        </section>
+        <section id="search-section" class="mb-8">
+             <input type="search" id="search-input" placeholder="Search videos by title, description, or tag..." class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+         </section>
+        <section id="content-section" class="mt-8">
+             <h2 id="content-title" class="text-2xl font-semibold mb-6 text-center text-gray-700">Featured Videos</h2>
+            <div id="content-details" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"> </div>
+            <div id="loading-indicator" class="hidden text-center py-6"> <div class="loader"></div> </div>
+             <div id="load-more-container" class="text-center mt-8 hidden">
+                 <button id="load-more-btn" class="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow hover:bg-blue-600 transition">
+                     Load More
+                 </button>
+             </div>
+        </section>
+    </main>
+    <div id="video-detail" class="fixed inset-0 bg-black bg-opacity-60 overflow-y-auto h-full w-full flex items-center justify-center p-4 hidden z-40">
+        <div class="relative p-5 md:p-8 border w-full max-w-xl md:max-w-2xl lg:max-w-4xl shadow-lg rounded-lg bg-white dark:bg-gray-800">
+            <button id="close-detail-btn" title="Close" class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white text-2xl p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 z-10"> <i class="fas fa-times"></i> </button>
+            <div id="video-content" class="mt-4">
+                <h3 id="video-detail-title" class="text-xl md:text-2xl font-bold mb-3 text-gray-900 dark:text-white">Video Title</h3>
+                 <div id="video-detail-embed" class="mb-4 bg-black rounded"> </div>
+                 <p id="video-detail-description" class="text-gray-700 dark:text-gray-300 mb-4">Video description...</p>
+                 <p id="video-detail-tags" class="text-sm text-gray-500 dark:text-gray-400 mb-2"><strong>Tags:</strong> </p>
+                 <div id="video-detail-panels"> </div>
+            </div>
+         </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const API_BASE_URL = '/api/public';
+        const VIDEOS_PER_PAGE = 12;
+        const DEFAULT_SORT = 'dateDesc'; // Default sorting for merged content
+
+        // --- Local Featured Video Data (Same as before) ---
+        const featuredVideoData = [ /* ... your full JSON data here ... */
+            { "id": "low-cost-shelter-1", "title": "Building a Compressed Earth Block Home", "description": "Learn how to create and use compressed earth blocks to build a durable, low-cost home with basic tools.", "thumbnail": "https://placehold.co/600x400/A0522D/FFF?text=Earth+Block", "url": "/videos/earth-block-home.mp4", "date": "2025-03-15T14:30:00Z", "category": "Shelter", "subcategory": "Low-cost, Durable Construction Methods", "tags": ["construction", "earth blocks", "sustainable", "low-cost"] },
+            { "id": "low-cost-shelter-2", "title": "Bamboo Construction Techniques", "description": "Discover how to build strong, flexible structures using bamboo as a primary building material.", "thumbnail": "https://placehold.co/600x400/8FBC8F/FFF?text=Bamboo", "url": "/videos/bamboo-construction.mp4", "date": "2025-03-12T09:15:00Z", "category": "Shelter", "subcategory": "Low-cost, Durable Construction Methods", "tags": ["bamboo", "construction", "sustainable", "durable"] },
+            { "id": "local-materials-1", "title": "Using Recycled Materials for Construction", "description": "Transform discarded materials into valuable building resources for walls, roofs, and foundations.", "thumbnail": "https://placehold.co/600x400/708090/FFF?text=Recycled", "url": "/videos/recycled-materials.mp4", "date": "2025-03-10T11:45:00Z", "category": "Shelter", "subcategory": "Locally Available Materials", "tags": ["recycled", "construction", "sustainability", "waste reduction"] },
+            { "id": "water-purification-1", "title": "DIY Water Filtration Systems", "description": "Create effective water filters using sand, gravel, and charcoal to remove contaminants.", "thumbnail": "https://placehold.co/600x400/ADD8E6/000?text=Water+Filter", "url": "/videos/water-filtration.mp4", "date": "2025-03-08T15:20:00Z", "category": "Water", "subcategory": "Purification", "tags": ["water filter", "DIY", "clean water", "health"] },
+            { "id": "water-purification-2", "title": "Solar Water Disinfection (SODIS)", "description": "Learn how to use sunlight to kill harmful microorganisms in drinking water using PET bottles.", "thumbnail": "https://placehold.co/600x400/87CEFA/000?text=SODIS", "url": "/videos/sodis-method.mp4", "date": "2025-03-05T10:30:00Z", "category": "Water", "subcategory": "Purification", "tags": ["solar disinfection", "clean water", "SODIS", "drinking water"] },
+            { "id": "water-desalination-1", "title": "Building a Simple Solar Still", "description": "Create a solar-powered system that can turn seawater into fresh drinking water.", "thumbnail": "https://placehold.co/600x400/B0E0E6/000?text=Solar+Still", "url": "/videos/solar-still.mp4", "date": "2025-03-02T13:45:00Z", "category": "Water", "subcategory": "Desalination", "tags": ["desalination", "solar", "seawater", "drinking water"] },
+            { "id": "water-distribution-1", "title": "Gravity-Fed Water Systems", "description": "Design and implement an efficient water distribution system using natural elevation differences.", "thumbnail": "https://placehold.co/600x400/AFEEEE/000?text=Gravity+Water", "url": "/videos/gravity-water.mp4", "date": "2025-02-28T16:10:00Z", "category": "Water", "subcategory": "Efficient Distribution", "tags": ["water distribution", "gravity", "pipes", "infrastructure"] },
+            { "id": "diy-solar-1", "title": "Building a Basic Solar Power System", "description": "Assemble a complete solar power system for basic household needs with step-by-step guidance.", "thumbnail": "https://placehold.co/600x400/FFD700/000?text=Solar+Power", "url": "/videos/basic-solar.mp4", "date": "2025-02-25T09:40:00Z", "category": "Energy", "subcategory": "DIY Solar Energy", "tags": ["solar", "power", "off-grid", "DIY"] },
+            { "id": "diy-solar-2", "title": "Solar Panel Positioning and Maintenance", "description": "Learn how to optimally position solar panels and keep them working efficiently for years.", "thumbnail": "https://placehold.co/600x400/FFA500/000?text=Solar+Position", "url": "/videos/solar-positioning.mp4", "date": "2025-02-22T14:15:00Z", "category": "Energy", "subcategory": "DIY Solar Energy", "tags": ["solar", "maintenance", "efficiency", "positioning"] },
+            { "id": "biogas-1", "title": "Constructing a Small-Scale Biogas Digester", "description": "Build a home-sized biogas system that converts organic waste into cooking fuel.", "thumbnail": "https://placehold.co/600x400/DAA520/000?text=Biogas", "url": "/videos/biogas-digester.mp4", "date": "2025-02-20T11:30:00Z", "category": "Energy", "subcategory": "Biogas Generation", "tags": ["biogas", "methane", "organic waste", "renewable energy"] },
+            { "id": "microgrid-1", "title": "Community Microgrid Basics", "description": "Design and implement a shared power system that connects multiple renewable sources to local homes.", "thumbnail": "https://placehold.co/600x400/BDB76B/000?text=Microgrid", "url": "/videos/community-microgrid.mp4", "date": "2025-02-18T13:20:00Z", "category": "Energy", "subcategory": "Microgrids for Sustainable Power", "tags": ["microgrid", "community power", "sustainability", "infrastructure"] },
+            { "id": "emt-skills-1", "title": "CPR and Basic Life Support", "description": "Learn essential cardiopulmonary resuscitation techniques and when to apply them in emergencies.", "thumbnail": "https://placehold.co/600x400/DC143C/FFF?text=CPR", "url": "/videos/cpr-basics.mp4", "date": "2025-02-15T10:45:00Z", "category": "Health", "subcategory": "EMT Skills", "tags": ["CPR", "life support", "emergency", "heart"] },
+            { "id": "emt-skills-2", "title": "Wound Assessment and Treatment", "description": "Learn how to properly clean, assess, and bandage different types of wounds to prevent infection.", "thumbnail": "https://placehold.co/600x400/FF6347/FFF?text=Wound+Care", "url": "/videos/wound-treatment.mp4", "date": "2025-02-12T15:30:00Z", "category": "Health", "subcategory": "EMT Skills", "tags": ["wounds", "first aid", "bandaging", "infection prevention"] },
+            { "id": "telemedicine-1", "title": "Setting Up for Remote Medical Consultations", "description": "Prepare your phone or computer for effective telehealth appointments with healthcare providers.", "thumbnail": "https://placehold.co/600x400/FF4500/FFF?text=Telemedicine", "url": "/videos/telemedicine-setup.mp4", "date": "2025-02-10T12:15:00Z", "category": "Health", "subcategory": "Telemedicine", "tags": ["telehealth", "remote medicine", "healthcare access", "technology"] },
+            { "id": "first-aid-1", "title": "Treating Burns at Home", "description": "Learn proper techniques for assessing and treating minor to moderate burns before medical help arrives.", "thumbnail": "https://placehold.co/600x400/FF7F50/000?text=Burns", "url": "/videos/burn-treatment.mp4", "date": "2025-02-08T09:30:00Z", "category": "Health", "subcategory": "First Aid", "tags": ["burns", "first aid", "home treatment", "emergency"] },
+            { "id": "first-aid-2", "title": "Making Oral Rehydration Solution", "description": "Create a lifesaving rehydration drink using basic household ingredients to treat dehydration.", "thumbnail": "https://placehold.co/600x400/FFA07A/000?text=ORS", "url": "/videos/rehydration-solution.mp4", "date": "2025-02-05T14:45:00Z", "category": "Health", "subcategory": "First Aid", "tags": ["rehydration", "dehydration", "diarrhea", "home remedy"] },
+            { "id": "healthcare-1", "title": "Setting Up a Home First Aid Station", "description": "Organize essential medical supplies for home emergencies with proper storage and accessibility.", "thumbnail": "https://placehold.co/600x400/FA8072/000?text=First+Aid+Kit", "url": "/videos/home-first-aid.mp4", "date": "2025-02-03T11:20:00Z", "category": "Health", "subcategory": "Self-sufficient Healthcare", "tags": ["first aid kit", "emergency preparedness", "home medical", "organization"] },
+            { "id": "urban-gardening-1", "title": "Container Gardening for Small Spaces", "description": "Grow vegetables and herbs in limited spaces using containers and vertical gardening techniques.", "thumbnail": "https://placehold.co/600x400/90EE90/000?text=Container+Garden", "url": "/videos/container-garden.mp4", "date": "2025-02-01T16:15:00Z", "category": "Sustainable Food", "subcategory": "Urban Gardening", "tags": ["container gardening", "urban farming", "small space", "vegetables"] },
+            { "id": "urban-gardening-2", "title": "Composting in Limited Spaces", "description": "Create nutritious soil from kitchen scraps even in apartments or small yards using compact systems.", "thumbnail": "https://placehold.co/600x400/98FB98/000?text=Small+Compost", "url": "/videos/small-compost.mp4", "date": "2025-01-29T10:30:00Z", "category": "Sustainable Food", "subcategory": "Urban Gardening", "tags": ["composting", "urban gardening", "waste reduction", "soil health"] },
+            { "id": "hydroponics-1", "title": "Building a Simple Hydroponic System", "description": "Create an affordable water-based growing system using recycled containers and basic materials.", "thumbnail": "https://placehold.co/600x400/00FA9A/000?text=Hydroponics", "url": "/videos/simple-hydroponics.mp4", "date": "2025-01-26T13:45:00Z", "category": "Sustainable Food", "subcategory": "Hydro/Aero/Fish -ponics", "tags": ["hydroponics", "DIY", "water-efficient", "food production"] },
+            { "id": "sustainable-agriculture-1", "title": "Natural Pest Control Methods", "description": "Manage garden pests using companion planting, beneficial insects, and homemade organic solutions.", "thumbnail": "https://placehold.co/600x400/3CB371/FFF?text=Pest+Control", "url": "/videos/natural-pest-control.mp4", "date": "2025-01-23T15:20:00Z", "category": "Sustainable Food", "subcategory": "Sustainable Agriculture Techniques", "tags": ["pest control", "organic", "sustainable", "gardening"] }
+         ];
+        // --- Category Structure (Same as before) ---
+         const categoryUIData = [ /* ... */ ];
+        // --- State Variables ---
+        let currentOffset = 0; // API offset for the current view context
+        let currentCategory = null;
+        let currentSubcategory = null;
+        let currentSearchTerm = null;
+        let isLoading = false; // API loading state
+        let hasMoreVideos = true; // Does the API have more videos for the current context?
+        let debounceTimer;
+        // NEW: State for displayed video data and IDs
+        let currentlyDisplayedVideos = []; // Holds the DATA of videos currently shown
+        let displayedVideoIds = new Set();   // Holds the IDs of videos currently shown
+
+        // --- DOM Elements (Same as before) ---
+        const categoryIconsContainer = document.getElementById('category-icons');
+        const subcategorySection = document.getElementById('subcategory-section');
+        const subcategoryTitle = document.getElementById('subcategory-title');
+        const subcategoriesContainer = document.getElementById('subcategories');
+        const contentSection = document.getElementById('content-section');
+        const contentTitle = document.getElementById('content-title');
+        const contentDetailsContainer = document.getElementById('content-details');
+        const searchInput = document.getElementById('search-input');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadMoreContainer = document.getElementById('load-more-container');
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const videoDetailModal = document.getElementById('video-detail');
+        const closeDetailBtn = document.getElementById('close-detail-btn');
+        const videoDetailTitle = document.getElementById('video-detail-title');
+        const videoDetailEmbed = document.getElementById('video-detail-embed');
+        const videoDetailDescription = document.getElementById('video-detail-description');
+        const videoDetailTags = document.getElementById('video-detail-tags');
+        const videoDetailPanels = document.getElementById('video-detail-panels');
+
+        // --- API Fetch Function (MODIFIED to return items) ---
+        async function fetchVideos(params = {}, isLoadMore = false) {
+            if (isLoading) return null; // Return null if already loading
+            isLoading = true;
+            loadingIndicator.classList.remove('hidden');
+            // If it's NOT a "load more" action, hide the button temporarily
+            if (!isLoadMore) {
+                loadMoreContainer.classList.add('hidden');
+            }
+
+            // Use currentOffset only if it's a "load more" action
+            const offsetToUse = isLoadMore ? currentOffset : 0;
+
+            const urlParams = new URLSearchParams({
+                action: 'videos',
+                limit: VIDEOS_PER_PAGE,
+                offset: offsetToUse,
+                ...params
+            });
+            for (let key of Array.from(urlParams.keys())) { if (!urlParams.get(key)) urlParams.delete(key); }
+            const url = `${API_BASE_URL}?${urlParams.toString()}`;
+            console.log("Fetching API:", url);
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update state based on API response
+                    hasMoreVideos = data.hasMore || false;
+                    // Increment offset ONLY if this was a load more action
+                    if (isLoadMore) {
+                        currentOffset += (data.items?.length || 0);
+                    } else {
+                        // If it was a fresh load (search or initial), reset offset based on results
+                        currentOffset = data.items?.length || 0;
+                    }
+                    return data.items || []; // Return the fetched items
+                } else {
+                    console.error("API Error:", data.message);
+                    hasMoreVideos = false; // Assume no more on error
+                    // Display error only if it's a fresh load, otherwise fail silently for load more
+                    if (!isLoadMore) contentDetailsContainer.innerHTML = `<p class="col-span-full text-red-500 text-center">Error loading videos: ${data.message || 'Unknown error'}</p>`;
+                    return null; // Return null on API error
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                hasMoreVideos = false; // Assume no more on error
+                 if (!isLoadMore) contentDetailsContainer.innerHTML = `<p class="col-span-full text-red-500 text-center">Could not connect to API or fetch videos.</p>`;
+                return null; // Return null on fetch error
+            } finally {
+                isLoading = false;
+                loadingIndicator.classList.add('hidden');
+                 // Show/hide load more button based on hasMore, but only after API call finishes
+                 // This will be handled more accurately by the caller (mergeAndDisplayVideos or search handler)
+            }
+        }
+
+        // --- Sort Helper Function ---
+        function sortVideos(videos, criteria = 'dateDesc') {
+            return videos.sort((a, b) => {
+                try {
+                    if (criteria === 'dateDesc') {
+                        // Handle potentially missing or invalid dates gracefully
+                        const dateA = a.date ? new Date(a.date) : null;
+                        const dateB = b.date ? new Date(b.date) : null;
+                        if (dateA && dateB) return dateB - dateA;
+                        if (dateA) return -1; // Put items with valid dates first
+                        if (dateB) return 1;
+                        return 0; // Keep original order if both dates are invalid/missing
+                    }
+                    // Add other sorting criteria here if needed (e.g., 'titleAsc')
+                    if (criteria === 'titleAsc') {
+                       return (a.title || '').localeCompare(b.title || '');
+                    }
+                } catch (e) {
+                    console.warn("Sorting error:", e);
+                    return 0; // Prevent crashing on bad sort data
+                }
+                return 0;
+            });
+        }
+
+
+        // --- Merge, Sort, and Display Function (NEW) ---
+        function mergeAndDisplayVideos(newItems, sortCriteria = DEFAULT_SORT) {
+            if (!newItems || newItems.length === 0) {
+                 console.log("No new items to merge.");
+                 // Update load more button visibility based on the last known 'hasMoreVideos' state
+                 loadMoreContainer.classList.toggle('hidden', !hasMoreVideos);
+                 return; // Nothing to do
+            }
+
+            console.log(`Merging ${newItems.length} new items.`);
+
+            // Combine with existing displayed data
+            const combinedList = [...currentlyDisplayedVideos];
+            let addedCount = 0;
+
+            // Add only unique new items
+            newItems.forEach(item => {
+                if (item && item.id && !displayedVideoIds.has(item.id)) {
+                    combinedList.push(item);
+                    displayedVideoIds.add(item.id); // Add ID immediately
+                    addedCount++;
+                } else {
+                    console.log(`Skipping duplicate or invalid item: ${item?.id}`);
+                }
+            });
+
+            console.log(`Added ${addedCount} unique items.`);
+
+            // Sort the combined list
+            const sortedList = sortVideos(combinedList, sortCriteria);
+
+            // Update the state
+            currentlyDisplayedVideos = sortedList;
+
+            // Re-render the entire list
+            displayVideoResults(currentlyDisplayedVideos, false); // False = replace content
+
+            // Update load more button visibility based on the API's 'hasMoreVideos' flag
+             loadMoreContainer.classList.toggle('hidden', !hasMoreVideos);
+             // Ensure button is enabled
+             loadMoreBtn.disabled = false;
+             loadMoreBtn.textContent = 'Load More';
+        }
+
+
+        // --- Display Video Results (SIMPLIFIED to just render) ---
+        function displayVideoResults(videoItems, isReplace = true) {
+            // If replacing content, clear the container and reset state
+            if (isReplace) {
+                contentDetailsContainer.innerHTML = '';
+                // Reset state ONLY if replacing. Merge function updates state before calling this.
+                // currentlyDisplayedVideos = videoItems; // NO! State is managed BEFORE calling this
+                // displayedVideoIds.clear();
+                // videoItems.forEach(v => displayedVideoIds.add(v.id)); // NO! State managed before.
+            }
+
+             // Handle empty results after potential merge/filter
+             if (videoItems.length === 0) {
+                 contentDetailsContainer.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">No videos found matching your criteria.</p>`;
+                 // Hide load more if list is empty (handled by caller typically)
+                 // loadMoreContainer.classList.add('hidden');
+                 return;
+             }
+
+            // Just render the provided items
+            videoItems.forEach(video => {
+                // Check if video and id exist - safety check
+                if (!video || !video.id) {
+                     console.warn("Skipping invalid video item in displayVideoResults:", video);
+                     return;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                const thumbnailUrl = video.thumbnail || (video.youtubeId ? `https://i.ytimg.com/vi/${video.youtubeId}/mqdefault.jpg` : 'https://placehold.co/600x400/CCCCCC/EFEFEF?text=No+Image');
+                card.innerHTML = ``; // Same innerHTML as before
+                card.innerHTML = `
+                    <img src="${thumbnailUrl}" alt="${video.title || 'Video thumbnail'}" loading="lazy">
+                    <div>
+                        <h4>${video.title || 'Untitled Video'}</h4>
+                        <p class="description">${(video.description || '').substring(0, 100)}${(video.description || '').length > 100 ? '...' : ''}</p>
+                        <p class="tags">Tags: ${(video.tags || []).join(', ')}</p>
+                    </div>
+                `;
+                 card.addEventListener('click', () => showVideoDetail(video));
+                 contentDetailsContainer.appendChild(card);
+            });
+        }
+
+        // --- Show Video Detail Modal (Mostly same, ensures player stops on close) ---
+        function showVideoDetail(video) { /* ... Same as before ... */ }
+        function closeVideoDetail() { /* ... Same as before, ensuring player stop logic is robust ... */
+              videoDetailModal.classList.add('hidden');
+              const videoElement = videoDetailEmbed.querySelector('video');
+              const iframeElement = videoDetailEmbed.querySelector('iframe');
+              if (videoElement) { try { videoElement.pause(); videoElement.src = ''; } catch(e){} } // Stop video tag
+              if (iframeElement) { try { iframeElement.src = ''; } catch(e){} } // Stop iframe
+              videoDetailEmbed.innerHTML = '';
+              document.body.style.overflow = '';
+         }
+         closeDetailBtn?.addEventListener('click', closeVideoDetail);
+         videoDetailModal?.addEventListener('click', (event) => { if (event.target === videoDetailModal) closeVideoDetail(); });
+
+// --- Display Subcategories ---
+        function displaySubcategories(category) {
+            // Clear previous subcategory buttons and title
+            subcategoriesContainer.innerHTML = '';
+            subcategoryTitle.textContent = `Subcategories for ${category.area}`; // Set title immediately
+
+            // Check if the category object and its subcategories array exist and have items
+            if (category && category.subcategories && category.subcategories.length > 0) {
+
+                // Loop through each subcategory defined in categoryUIData
+                category.subcategories.forEach(sub => {
+                    // Ensure the subcategory object and its title exist
+                    if (!sub || !sub.title) {
+                         console.warn("Skipping invalid subcategory definition in categoryUIData:", sub);
+                         return; // Skip this iteration
+                    }
+
+                    const subBtn = document.createElement('button');
+                    subBtn.className = 'subcategory-btn'; // Apply styling
+                    subBtn.innerHTML = `<strong>${sub.title}</strong>`; // Display subcategory title
+
+                    // Define what happens when a subcategory button is clicked
+                    subBtn.onclick = () => {
+                        // Set the current state to reflect the selected subcategory
+                        currentCategory = category.area;
+                        currentSubcategory = sub.title;
+                        currentSearchTerm = null; // Clear any active search term
+                        contentTitle.textContent = `Videos for: ${category.area} - ${sub.title}`; // Update main content title
+
+                        // --- Load Content from Local Data ---
+                        // Filter the local featured video data
+                        const filteredVideos = featuredVideoData.filter(video =>
+                            // Ensure video object has category and subcategory properties before comparing
+                            video && video.category === currentCategory && video.subcategory === currentSubcategory
+                        );
+
+                        // Sort the filtered local data (e.g., by newest date)
+                        const sortedLocalVideos = sortVideos(filteredVideos, DEFAULT_SORT);
+
+                        // Update the application's state with the new list of videos
+                        currentlyDisplayedVideos = sortedLocalVideos; // Store the data
+                        displayedVideoIds.clear(); // Clear previously displayed IDs
+                        currentlyDisplayedVideos.forEach(v => {
+                            if(v && v.id) displayedVideoIds.add(v.id) // Add IDs of the new list
+                        });
+
+                        console.log(`Displaying ${currentlyDisplayedVideos.length} sorted local videos for ${currentCategory} - ${currentSubcategory}`);
+
+                        // Display the videos in the main content area, replacing existing content
+                        displayVideoResults(currentlyDisplayedVideos, true); // true = replace content
+
+                        // --- Prepare for API loading ---
+                        // Reset the API offset for this new context
+                        currentOffset = 0;
+                        // Assume the API might have more videos for this subcategory
+                        hasMoreVideos = true;
+
+                        // Show the "Load More" button and ensure it's enabled
+                        loadMoreContainer.classList.remove('hidden');
+                        loadMoreBtn.disabled = false;
+                        loadMoreBtn.textContent = 'Load More';
+
+                        // Hide the subcategory selection section now that one is chosen
+                        subcategorySection.classList.add('hidden');
+                        // Scroll the page smoothly to the newly displayed content
+                        contentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }; // End of subBtn.onclick
+
+                    // Add the created button to the container
+                    subcategoriesContainer.appendChild(subBtn);
+                }); // End of forEach loop
+
+                // Make the subcategory section visible after populating buttons
+                subcategorySection.classList.remove('hidden');
+                // Scroll to the subcategory section so the user sees the options
+                subcategorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } else {
+                // --- Handle Case: No Subcategories Defined ---
+                console.log(`No subcategories defined for ${category.area}.`);
+
+                // Display a message in the subcategory area
+                subcategoriesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full p-4">No specific subcategories defined for ${category.area}. Showing all content for this category below.</p>`;
+                // Make the section visible to show the message
+                subcategorySection.classList.remove('hidden');
+                 // Scroll to the message temporarily
+                subcategorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+
+                // --- Load all items for the main category from local data as a fallback ---
+                const filteredVideos = featuredVideoData.filter(video => video && video.category === category.area);
+                const sortedCategoryVideos = sortVideos(filteredVideos, DEFAULT_SORT);
+
+                // Update state
+                currentlyDisplayedVideos = sortedCategoryVideos;
+                displayedVideoIds.clear();
+                currentlyDisplayedVideos.forEach(v => {
+                    if (v && v.id) displayedVideoIds.add(v.id);
+                });
+
+                 console.log(`Displaying ${currentlyDisplayedVideos.length} sorted local videos for main category: ${category.area}`);
+
+                // Display results in the main content area
+                displayVideoResults(currentlyDisplayedVideos, true); // Replace content
+                contentTitle.textContent = `All Videos for: ${category.area}`; // Update main title
+
+                // Hide "Load More" - ambiguity whether it should load for the main category
+                loadMoreContainer.classList.add('hidden');
+                hasMoreVideos = false; // Assume no API load context here
+
+                // Don't scroll to contentSection here, let the user see the "no subcategories" message first.
+                // If desired, you could scroll to contentSection after a short delay.
+                // setTimeout(() => {
+                //     contentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // }, 1500); // Example: Scroll after 1.5 seconds
+
+            } // End of else block (no subcategories)
+        } // End of displaySubcategories function
+
+
+      
+
+        // --- Load Categories 
+        function loadCategories(categoryStructure) 
+
+ 
+        searchInput?.addEventListener('input', (e) => {
+             clearTimeout(debounceTimer);
+             const searchTerm = e.target.value.trim();
+             debounceTimer = setTimeout(async () => { // Make async
+                // Fetch only if term changed OR if previously showing local/merged data
+                if (currentSearchTerm !== searchTerm || displayedVideoIds.size > 0) {
+                    currentSearchTerm = searchTerm;
+                    currentCategory = null;
+                    currentSubcategory = null;
+                    contentTitle.textContent = searchTerm ? `Search Results for: "${searchTerm}"` : 'Featured Videos';
+
+                    // **RESET STATE for search**
+                    currentlyDisplayedVideos = [];
+                    displayedVideoIds.clear();
+                    currentOffset = 0; // Reset offset for new search
+
+                    const searchResultItems = await fetchVideos({ search: currentSearchTerm }, false); // False = not load more
+
+                    if (searchResultItems) {
+                        // Sort the initial search results
+                        const sortedSearchResults = sortVideos(searchResultItems, DEFAULT_SORT); // Or API relevance?
+
+                        // **UPDATE STATE**
+                        currentlyDisplayedVideos = sortedSearchResults;
+                        currentlyDisplayedVideos.forEach(v => displayedVideoIds.add(v.id)); // Populate IDs
+
+                        console.log(`Displaying ${currentlyDisplayedVideos.length} API search results.`);
+                        displayVideoResults(currentlyDisplayedVideos, true); // True = replace content
+
+                        // Update load more based on API response (hasMoreVideos was set in fetchVideos)
+                        loadMoreContainer.classList.toggle('hidden', !hasMoreVideos);
+                         loadMoreBtn.disabled = false;
+                         loadMoreBtn.textContent = 'Load More';
+                    } else {
+                        // Error occurred, fetchVideos already logged it and potentially updated UI
+                        displayVideoResults([], true); // Show empty message
+                        loadMoreContainer.classList.add('hidden');
+                    }
+                    subcategorySection.classList.add('hidden');
+                }
+             }, 500);
+        });
+
+        // --- Load More Button Handling (UPDATED to use mergeAndDisplayVideos) ---
+        loadMoreBtn?.addEventListener('click', async () => { // Make async
+             if (!isLoading && hasMoreVideos) {
+                  console.log('Load More clicked. Fetching API page...');
+                  loadMoreBtn.disabled = true; // Disable button while loading
+                  loadMoreBtn.textContent = 'Loading...';
+
+                  // Fetch next page from API using current filters
+                  const newApiItems = await fetchVideos({
+                      category: currentCategory,
+                      subcategory: currentSubcategory,
+                      search: currentSearchTerm
+                  }, true); // True = is load more action
+
+                  if (newApiItems !== null) {
+                      // Merge, sort, and display the results
+                      mergeAndDisplayVideos(newApiItems, DEFAULT_SORT);
+                  } else {
+                      // Fetch failed, fetchVideos handled logging. Re-enable button maybe?
+                      console.error("Load More failed to fetch items.");
+                      loadMoreBtn.disabled = false; // Re-enable on failure
+                      loadMoreBtn.textContent = 'Load More (Error)';
+                      // Optionally hide button if we are sure there's an issue
+                      // loadMoreContainer.classList.add('hidden');
+                  }
+             } else if (!hasMoreVideos) {
+                 console.log("Load More clicked, but API indicates no more videos.");
+                 loadMoreBtn.textContent = 'No More Videos';
+                 loadMoreBtn.disabled = true;
+             }
+        });
+
+        // --- Initial Load (UPDATED to set initial state) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategories(categoryUIData);
+
+            // Sort initial local data
+            const sortedInitialData = sortVideos(featuredVideoData, DEFAULT_SORT);
+
+            // **UPDATE STATE**
+            currentlyDisplayedVideos = sortedInitialData;
+            displayedVideoIds.clear();
+            currentlyDisplayedVideos.forEach(v => displayedVideoIds.add(v.id));
+
+            console.log(`Displaying ${currentlyDisplayedVideos.length} initial sorted local videos.`);
+            displayVideoResults(currentlyDisplayedVideos, true); // True = replace content
+
+            contentTitle.textContent = 'Featured Videos';
+            loadMoreContainer.classList.add('hidden'); // Hide load more initially
+        });
+    </script>
+</body>
+</html>
