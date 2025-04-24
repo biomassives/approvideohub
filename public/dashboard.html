@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="dashboard_title">Biodiversity Hub - Dashboard</title>
+  <link rel="stylesheet" href="./css/main.css">
+  <meta name="description" content="Biodiversity Hub Dashboard - Access data, learning resources, and projects.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-ABC123'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+
+  <style>
+    /* Toast container */
+    #toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; }
+    .toast { margin-bottom: .5rem; padding: .75rem 1rem; border-radius: 4px; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.2); opacity: .9; transition: opacity .3s; }
+    .toast.hide { opacity: 0; }
+    .toast-info { background: #17a2b8; }
+    .toast-success { background: #28a745; }
+    .toast-error { background: #dc3545; }
+
+    /* Basic Loading/Error Styling (can be enhanced in main.css) */
+    .loading-message, .error-message {
+      padding: 1rem;
+      text-align: center;
+      color: #555;
+      font-style: italic;
+      border: 1px dashed #ccc;
+      border-radius: 4px;
+      margin: 1rem 0;
+    }
+    .error-message {
+      color: #dc3545;
+      border-color: #dc3545;
+      font-style: normal;
+      font-weight: bold;
+    }
+
+    /* Helper class for screen reader only text */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header" role="banner">
+    <div class="brand-name" data-i18n="brand_name">Biodiversity Hub</div>
+    <nav class="main-nav" aria-label="Main Navigation">
+      <ul>
+        <li><a href="#dashboard" class="nav-link active" data-section="dashboard" data-i18n="nav_dashboard">Dashboard</a></li>
+        <li><a href="#timeline" class="nav-link" data-section="timeline" data-i18n="nav_timeline">Timeline</a></li>
+        <li><a href="#learning" class="nav-link" data-section="learning" data-i18n="nav_learning">Learning</a></li>
+        <li><a href="#workshops" class="nav-link" data-section="workshops" data-i18n="nav_workshops">Workshops</a></li>
+        <li><a href="#projects" class="nav-link" data-section="projects" data-i18n="nav_projects">Projects</a></li>
+        </ul>
+    </nav>
+    <div class="user-controls">
+      <span id="user-name" aria-live="polite">Loading user...</span> <button id="logout-button" data-i18n="logout_button">Logout</button>
+    </div>
+  </header>
+
+  <div id="toast-container" role="alert" aria-live="assertive">
+    </div>
+
+  <main class="dashboard-container" role="main">
+
+    <section id="dashboard" class="dashboard-section" aria-labelledby="dashboard-title">
+      <div class="welcome-section">
+        <h1 id="dashboard-title" data-i18n="dashboard_welcome">Welcome to Your Dashboard</h1>
+        <p id="user-welcome-message" data-i18n="dashboard_loading_personalized">Loading your personalized dashboard...</p>
+      </div>
+
+      <div class="dashboard-grid">
+        <article class="dashboard-card" aria-labelledby="featured-content-title">
+          <h2 id="featured-content-title" data-i18n="featured_content_title">Featured Content</h2>
+          <div id="featured-content" role="region" aria-live="polite" aria-busy="false">
+            <div class="loading-message" role="status" data-i18n="loading">Loading Featured Content...</div>
+            </div>
+        </article>
+
+        <div class="dashboard-card" aria-labelledby="stats-resources-title">
+          <h2 id="stats-resources-title" data-i18n="stats_resources_title">Resources</h2>
+          <div id="available-resources-count" class="stat-value" aria-live="polite">–</div>
+        </div>
+        <div class="dashboard-card" aria-labelledby="stats-workshops-title">
+          <h2 id="stats-workshops-title" data-i18n="stats_workshops_title">Workshops</h2>
+          <div id="upcoming-workshops-count" class="stat-value" aria-live="polite">–</div>
+        </div>
+        <div class="dashboard-card" aria-labelledby="stats-projects-title">
+          <h2 id="stats-projects-title" data-i18n="stats_projects_title">Projects</h2>
+          <div id="impact-projects-count" class="stat-value" aria-live="polite">–</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="timeline" class="dashboard-section hidden" aria-labelledby="timeline-title">
+      <h2 id="timeline-title" data-i18n="timeline_title">Recent Activity</h2>
+      <div id="timeline-container" role="region" aria-live="polite" aria-busy="false">
+         <div class="loading-message" role="status" data-i18n="loading">Loading Timeline...</div>
+         </div>
+      </section>
+
+    <section id="learning" class="dashboard-section hidden" aria-labelledby="learning-title">
+      <h2 id="learning-title" data-i18n="learning_title">Learning Resources</h2>
+      <div id="resources-grid" role="region" aria-live="polite" aria-busy="false">
+         <div class="loading-message" role="status" data-i18n="loading">Loading Learning Resources...</div>
+         </div>
+      <nav class="pagination-controls" aria-label="Learning Resources Pagination">
+        <button data-section="learning" data-page-direction="prev" aria-label="Previous page of Learning Resources" data-i18n="prev_page" disabled>&laquo; Prev</button>
+        <span class="page-info" id="learning-page-info">Page 1 of 1</span> <button data-section="learning" data-page-direction="next" aria-label="Next page of Learning Resources" data-i18n="next_page" disabled>Next &raquo;</button>
+      </nav>
+    </section>
+
+    <section id="workshops" class="dashboard-section hidden" aria-labelledby="workshops-title">
+      <h2 id="workshops-title" data-i18n="workshops_title">Workshops</h2>
+      <div id="workshops-list" role="region" aria-live="polite" aria-busy="false">
+        <div class="loading-message" role="status" data-i18n="loading">Loading Workshops...</div>
+        </div>
+      <nav class="pagination-controls" aria-label="Workshops Pagination">
+        <button data-section="workshops" data-page-direction="prev" aria-label="Previous page of Workshops" data-i18n="prev_page" disabled>&laquo; Prev</button>
+         <span class="page-info" id="workshops-page-info">Page 1 of 1</span> <button data-section="workshops" data-page-direction="next" aria-label="Next page of Workshops" data-i18n="next_page" disabled>Next &raquo;</button>
+      </nav>
+    </section>
+
+    <section id="projects" class="dashboard-section hidden" aria-labelledby="projects-title">
+      <h2 id="projects-title" data-i18n="projects_title">Projects</h2>
+      <div id="project-cards" role="region" aria-live="polite" aria-busy="false">
+         <div class="loading-message" role="status" data-i18n="loading">Loading Projects...</div>
+         </div>
+      <nav class="pagination-controls" aria-label="Projects Pagination">
+        <button data-section="projects" data-page-direction="prev" aria-label="Previous page of Projects" data-i18n="prev_page" disabled>&laquo; Prev</button>
+         <span class="page-info" id="projects-page-info">Page 1 of 1</span> <button data-section="projects" data-page-direction="next" aria-label="Next page of Projects" data-i18n="next_page" disabled>Next &raquo;</button>
+      </nav>
+    </section>
+
+  </main>
+
+  <footer class="page-footer" role="contentinfo">
+    <p>
+      <a href="/privacy.html" target="_blank" data-i18n="privacy_policy">Privacy Policy</a> |
+      <a href="/terms.html" target="_blank" data-i18n="terms_of_service">Terms of Service</a>
+      </p>
+  </footer>
+
+  <script type="module" nonce="ABC123" src="./js/auth-guard.js"></script>
+  <script type="module" nonce="ABC123" src="./js/nav-ui.js"></script>
+  <script type="module" nonce="ABC123" src="./js/dashboard-loaders.js"></script>
+  <script type="module" nonce="ABC123" src="./js/dashboard-actions.js"></script>
+  <script type="module" nonce="ABC123" src="./js/confetti-visit.js"></script>
+  <script type="module" nonce="ABC123" src="./js/dashboard.js"></script>
+
+  
+</body>
+</html>
